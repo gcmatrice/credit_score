@@ -9,14 +9,14 @@ def loadModel(directory, filename, verbose):
 
 
 def finalModelFilename(full):
-    directory=f"{p7uSF.refPath()}{p7dS.SHAREDRESOURCESMODELDIR}"
+    directory = f"{p7uSF.refPath()}{p7dS.SHAREDRESOURCESMODELDIR}"
     filename = (f"apiModel_{p7dS.STREAMLITNBCUSTOMERS}"
                 f"_{p7dS.APINBFEATURES}"
                 f"_{p7dS.FINALMODELTHRESHOLDPCT}.pkl")
     return p7uSF.filenameGeneric(directory=directory,
                                  filename=filename,
-                                     full=full)
-    
+                                 full=full)
+
 
 def finalModel():
     directory, filename = finalModelFilename(full=False)
@@ -26,8 +26,9 @@ def finalModel():
 
 # model=finalModel()
 
+
 def apiDataFilename(full):
-    directory=f"{p7uSF.refPath()}{p7dS.APIDATADIR}"
+    directory = f"{p7uSF.refPath()}{p7dS.APIDATADIR}"
     filename = f"apiData_{p7dS.STREAMLITNBCUSTOMERS}.json"
     return p7uSF.filenameGeneric(directory=directory,
                                  filename=filename,
@@ -51,11 +52,8 @@ def predictionDict(item_id, predictProba, granted):
     }
 
 
-
-
 def main():
     pass
-
 
 if __name__ == "__main__":
     main()

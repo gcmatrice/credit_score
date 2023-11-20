@@ -1,4 +1,5 @@
 import io
+import os
 import requests
 import random
 import matplotlib.pyplot as plt
@@ -13,7 +14,16 @@ import numpy as np
 import cs_Settings as p7dS
 import cs_UsefulFunctions as p7uSF
 
-PAIDBACKIMGSIZE=(200, 150)
+DEFAULT_STREAMLIT_FEATS = [
+    "EXT_SOURCE_3",
+    "EXT_SOURCE_2",
+    "DAYS_BIRTH",
+    p7dS.H_SHARED_AMOUNT
+]
+# H_STREAMLIT_FEATS = ["EXT_SOURCE_3","EXT_SOURCE_2"]
+
+
+PAIDBACKIMGSIZE = (200, 150)
 
 WHICH_CUSTOMER_DEFAULT = "Defaulted"
 WHICH_CUSTOMER_NO_DEFAULT = "Didn't default"
@@ -31,15 +41,33 @@ def orderedCustomerTypes():
     return list(map(itemgetter(1), sorted(l1, key=itemgetter(0))))
 
 
-def urlRequest(identifier, item_id):
-    return f"{p7dS.URL_API}{identifier}/{item_id}"
+def urlRequest(apiurl, identifier, item_id):
+    return f"{apiurl}{identifier}/{item_id}"
 
 
-def apiRequest(identifier, item_id, queries):
-    url = urlRequest(identifier=identifier, item_id=item_id)
+def apiRequest(apiurl, identifier, item_id, queries):
+    url = urlRequest(apiurl=apiurl,
+                     identifier=identifier,
+                     item_id=item_id)
     result = requests.get(url, params=queries)
     return result
 
+
+def descriptionsFilename(full):
+    directory = f"{p7uSF.refPath()}{p7dS.STREAMLITDATADIR}"
+    filename = f"featuresDescriptions.json"
+    return p7uSF.filenameGeneric(directory=directory,
+                                 filename=filename,
+                                 full=full)
+
+
+def descriptionsDictFunc():
+    directory, filename = descriptionsFilename(full=False)
+    return p7uSF.loadDict(directory=directory,
+                          filename=filename,
+                          verbose=False)
+
+descriptionsDict=descriptionsDictFunc()
 
 def streamlitDataFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.STREAMLITDATADIR}"
@@ -51,14 +79,19 @@ def streamlitDataFilename(full):
 
 def streamlitDfFunc():
     directory, filename = streamlitDataFilename(full=False)
-    return p7uSF.dfFromJson(directory=directory,
-                            filename=filename,
-                            verbose=False)
+    if filename not in os.listdir(directory):
+        return None
+    df = p7uSF.dfFromJson(directory=directory,
+                          filename=filename,
+                          verbose=False)
+    if "index" in df.columns:
+        del df["index"]
+    return df
 
 
 def streamlitPositioningFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.STREAMLITDATADIR}"
-    filename = f"streamlitPositioning_{len(p7dS.H_STREAMLIT_FEATS)}.json"
+    filename = f"streamlitPositioning_{p7dS.APINBFEATURES}.json"
     return p7uSF.filenameGeneric(directory=directory,
                                  filename=filename,
                                  full=full)
@@ -67,6 +100,8 @@ def streamlitPositioningFilename(full):
 def positioningDfFunc():
     directory, filename = streamlitPositioningFilename(
         full=False)
+    if filename not in os.listdir(directory):
+        return None
     return p7uSF.dfFromJson(directory=directory,
                             filename=filename,
                             verbose=False)
@@ -82,34 +117,34 @@ def sortedRandomSubList(l, howMany):
     return sorted(ll[:howMany])
 
 
-def predictionMessage(itemId, predictProba, granted, hasDefaulted=None):
-    print(f"{itemId=}")
-    print(f"{predictProba=}")
-    grantedStr = "unknown"
-    if granted in {True, False}:
-        grantedStr = "granted" if granted else "refused"
-    if predictProba != None:
-        score = f"{predictProba:.4f}"
-    else:
-        score = "unknown"
-    result = [(f"Customer number {itemId} "
-               f"gets a score of score={score}.")
-              ]
-    if "unknown" != grantedStr:
-        result.append(("As a consequence, his application "
-                       f"has been {grantedStr}."))
-    else:
-        result.append(f"Conclusion : {grantedStr}")
-    if hasDefaulted is None:
-        return result
-    if hasDefaulted not in {True, False}:
-        return result
-    prefixStr = str(granted ^ hasDefaulted)
-    suffix = "Positive" if hasDefaulted else "Negative"
-    trueOutcome = "defaulted" if hasDefaulted else "didn't default"
-    result.append((f"True outcome : Customer number {itemId} "
-                   f"{trueOutcome} ({prefixStr} {suffix})."))
-    return result
+# def predictionMessage(itemId, predictProba, granted, hasDefaulted=None):
+#     print(f"{itemId=}")
+#     print(f"{predictProba=}")
+#     grantedStr = "unknown"
+#     if granted in {True, False}:
+#         grantedStr = "granted" if granted else "refused"
+#     if predictProba != None:
+#         score = f"{predictProba:.4f}"
+#     else:
+#         score = "unknown"
+#     result = [(f"Customer number {itemId} "
+#                f"gets a score of score={score}.")
+#               ]
+#     if "unknown" != grantedStr:
+#         result.append(("As a consequence, his application "
+#                        f"has been {grantedStr}."))
+#     else:
+#         result.append(f"Conclusion : {grantedStr}")
+#     if hasDefaulted is None:
+#         return result
+#     if hasDefaulted not in {True, False}:
+#         return result
+#     prefixStr = str(granted ^ hasDefaulted)
+#     suffix = "Positive" if hasDefaulted else "Negative"
+#     trueOutcome = "defaulted" if hasDefaulted else "didn't default"
+#     result.append((f"True outcome : Customer number {itemId} "
+#                    f"{trueOutcome} ({prefixStr} {suffix})."))
+#     return result
 
 
 def isIn(x, y, x0, y0, rm, rM, thetam, thetaM, e):
@@ -230,17 +265,38 @@ def paidBackImage(hasPaidBack):
                                       full=True)
     return Image.open(filename).resize(PAIDBACKIMGSIZE)
 
-paidBackSuccessImage = paidBackImage(hasPaidBack=True)
-paidBackFailureImage = paidBackImage(hasPaidBack=False)
+
+paidBackImages ={t:paidBackImage(hasPaidBack=t) for t in [False,True]} 
 
 masterDf = streamlitDfFunc()
+masterDf["RESULT"] = masterDf[p7dS.H_SHARED_TARGET].astype(int)
+masterDf["RESULT"].replace(1, "DEFAULTED", inplace=True)
+masterDf["RESULT"].replace(0, "REPAID", inplace=True)
 positioningDf = positioningDfFunc()
+positioningDf["RESULT"] = positioningDf[p7dS.H_SHARED_TARGET].astype(int)
+positioningDf["RESULT"].replace(1, "DEFAULTED", inplace=True)
+positioningDf["RESULT"].replace(0, "REPAID", inplace=True)
 
 
 def oneLineDf(id_):
     mask = masterDf[p7dS.H_SHARED_UID] == id_
     return masterDf[mask].reset_index(drop=True)
 
+
+def paramDf(id_, displayedFeature):
+    df = oneLineDf(id_)
+    # cols = list(df.columns)[:min(howManyCols, len(df.columns))]
+    df = df[[displayedFeature]]
+    return df.style.hide(axis="index").to_html()
+
+def featureValue(id_,displayedFeature):
+    df = oneLineDf(id_)
+    df = df[[displayedFeature]].copy()
+    df.reset_index(inplace=True)
+    nbRows,_=df.shape
+    if nbRows != 1:
+        return None
+    return df.at[0,displayedFeature]
 
 def trueOutcome(id_):
     df = oneLineDf(id_=id_)
@@ -249,23 +305,27 @@ def trueOutcome(id_):
     return getitem(s, 0)
 
 
-def itemRequest(whichItem, amount=None):
-    queries = {}
-    # print(f"{amount=}")
-    if amount is not None:
-        queries = {"amount": amount}
-    response = apiRequest(identifier="items",
-                          item_id=whichItem,
-                          queries=queries)
-
-    score = response.json().get(p7dS.APISCOREHEADER)
-    if score is not None:
-        score = floatStrToFloat(score)
-    hasBeenGranted = response.json().get(p7dS.APIGRANTEDHEADER)
-    if hasBeenGranted is not None:
-        hasBeenGranted = boolStrToBool(hasBeenGranted)
-    hasDefaulted = (trueOutcome(id_=whichItem) == 1)
-    return score, hasBeenGranted, hasDefaulted
+def itemRequest(whichItem, apiurl, amount=None):
+    try:
+        queries = {}
+        # print(f"{amount=}")
+        if amount is not None:
+            queries = {"amount": amount}
+        response = apiRequest(apiurl=apiurl,
+                              identifier="items",
+                              item_id=whichItem,
+                              queries=queries)
+        score = response.json().get(p7dS.APISCOREHEADER)
+        if score is not None:
+            score = floatStrToFloat(score)
+        hasBeenGranted = response.json().get(p7dS.APIGRANTEDHEADER)
+        if hasBeenGranted is not None:
+            hasBeenGranted = boolStrToBool(hasBeenGranted)
+        hasDefaulted = (trueOutcome(id_=whichItem) == 1)
+        return score, hasBeenGranted, hasDefaulted
+    except Exception as e:
+        print(str(e))
+        return None, None, None
 
 
 def idList(customerType=WHICH_CUSTOMER_ALL, maxSize=None):
@@ -306,31 +366,51 @@ def randomOneLineDf(customerType=WHICH_CUSTOMER_ALL):
     return oneLineDf(id_=randomId(customerType=customerType))
 
 
-def positioning(id_):
-    df = positioningDf
+def positioning(id_, displayedFeature, override=None):
+    thisIdHeader = "ThisId"
+    cols = [displayedFeature]
+    # print(f"{positioningDf.columns=}")
+    df = positioningDf[[*cols,
+                        p7dS.H_SHARED_TARGET,
+                        p7dS.H_SHARED_UID,
+                        "RESULT"]].copy()
+    nbrows, _ = df.shape
+    df[thisIdHeader] = [id_]*nbrows
     oldf = oneLineDf(id_=id_)
-    fig = plt.figure(figsize=(12, 6))
-    gs = gridspec.GridSpec(1, 2, width_ratios=[3, 3])
+    fig = plt.figure(figsize=(8, 4))
+    gs = gridspec.GridSpec(1, len(cols), width_ratios=[1]*len(cols))
     # refAx=None
-    colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
-    for h, c, g in zip(df.columns, colors[:len(df.columns)], gs):
-        # print(f"{h=}")
-        # if refAx is None:
-        #     ax = plt.subplot(g)
-        #     refAx = ax
-        # else:
-        #     ax = plt.subplot(g,sharey=refAx)
-        value = oldf.at[0, h]
-        # print(f"{value=}")
+    sns.set_theme(style="ticks", palette="pastel")
+    for h, g in zip(cols, gs):
+        value = oldf.at[0, h] if override is None else override
         ax = plt.subplot(g)
-        g2 = sns.boxplot(y=df[h],  orient='v', ax=ax, color=c)
+        g2 = sns.boxplot(
+            data=df,
+            x=thisIdHeader,
+            y=h,
+            hue="RESULT",
+            orient='v',
+            ax=ax)
         g2.set(xticklabels=[])
-        g2.set(title=h)
         g2.set(xlabel=None)
         g2.tick_params(bottom=False)  # remove the ticks
-        g2.axhline(value)
+        g2.axhline(value, color="black")
 
     return fig2img(fig).resize((800, 300))
+
+
+def mergeWithPriority(source, priorities, verbose):
+    if not set(priorities).issubset(set(source)):
+        if verbose:
+            message = (f"Warning: {set(priorities)-set(source)}"
+                       "don't belong to source vector.")
+            print(message)
+        newPriorities = filter(lambda c: c in source, priorities)
+        return mergeWithPriority(source=source,
+                                 priorities=newPriorities)
+    v = list(filter(lambda c: c in source, priorities))
+    v.extend(filter(lambda c: c not in v, source))
+    return v
 
 
 def main():
@@ -352,7 +432,13 @@ def main2():
     print(f"{masterDf.dtypes.unique()=}")
 
 
+def main3():
+    print(positioningDf.head())
+    # positioning(id_=126568, params=["EXT_SOURCE_3", "EXT_SOURCE_2"])
+
+
 if __name__ == '__main__':
-    df = allScores().sort_values("score")
-    for s, r in zip(df["score"], df["granted"]):
-        print(f"{s=}:{r=}")
+    main3()
+    # df = allScores().sort_values("score")
+    # for s, r in zip(df["score"], df["granted"]):
+    #     print(f"{s=}:{r=}")

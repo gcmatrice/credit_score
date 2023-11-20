@@ -2,6 +2,11 @@ import os
 import json
 import pandas as pd
 import pickle
+# import sklearn
+# import uvicorn
+# import lightgbm
+# import sklearn.model_selection
+# import sklearn.metrics
 import cs_Settings as p7dS
 
 def refPath():
@@ -56,10 +61,11 @@ def dataTypesFilename(full):
 
 def mainDataTypes(verbose):
     directory, filename = dataTypesFilename(full=False)
-    return loadDict(directory=directory,
+    d= loadDict(directory=directory,
                     filename=filename,
                     verbose=verbose)
-
+    d[p7dS.H_SHARED_TARGET]="int32"
+    return d
 
 def adjustTypes(df, verbose):
     typeDict = mainDataTypes(verbose=verbose)
@@ -77,10 +83,13 @@ def dfFromJson(directory, filename, verbose):
     if filename not in os.listdir(directory):
         if verbose:
             print(f"{filename} doesn't exist in {directory}.")
+        return None
     fullFilename = f"{directory}{filename}"
     with open(fullFilename, "r", encoding="utf8") as f:
         d = json.load(f)
     df = pd.read_json(d)
+    if "index" in df.columns:
+        del df["index"]
     return adjustTypes(df=df, verbose=verbose)
 
 
