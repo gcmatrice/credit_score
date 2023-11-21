@@ -12,13 +12,13 @@ descriptionsDict = p7STF.descriptionsDict
 # st.write(f"{masterDf.shape=}")
 # st.write(f"{positioningDf.shape=}")
 
-# apiIpAddress = st.sidebar.text_input("IP Address",
-#                                      value=p7dS.LOCALE_API)
+apiIpAddress = st.sidebar.text_input("IP Address",
+                                     value=p7dS.LOCALE_API)
 st.sidebar.image(paidBackImages.get(True))
 
-ipAddress = st.sidebar.radio("IP Address",
-                             ["locale", "remote"])
-apiIpAddress = p7dS.AZURE_API if ipAddress == "remote" else p7dS.LOCALE_API
+# ipAddress = st.sidebar.radio("IP Address",
+#                              ["locale", "remote"])
+# apiIpAddress = p7dS.AZURE_API if ipAddress == "remote" else p7dS.LOCALE_API
 
 allButTarget = list(filter(lambda h: h not in
                            {p7dS.H_SHARED_TARGET, p7dS.H_SHARED_UID},
