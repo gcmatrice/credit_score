@@ -9,7 +9,7 @@ def loadModel(directory, filename, verbose):
 
 
 def finalModelFilename(full):
-    directory = f"{p7uSF.refPath()}{p7dS.SHAREDRESOURCESMODELDIR}"
+    directory = f"{p7uSF.refPath()}{p7dS.APIMODELDIR}"
     filename = (f"apiModel_{p7dS.STREAMLITNBCUSTOMERS}"
                 f"_{p7dS.APINBFEATURES}"
                 f"_{p7dS.FINALMODELTHRESHOLDPCT}.pkl")
@@ -24,9 +24,6 @@ def finalModel():
                      filename=filename,
                      verbose=False)
 
-# model=finalModel()
-
-
 def apiDataFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.APIDATADIR}"
     filename = f"apiData_{p7dS.STREAMLITNBCUSTOMERS}.json"
@@ -40,8 +37,6 @@ def apiDfFunc():
     return p7uSF.dfFromJson(directory=directory,
                             filename=filename,
                             verbose=False)
-
-# apiDf = apiDfFunc()
 
 
 def predictionDict(item_id, predictProba, granted):

@@ -4,14 +4,18 @@ import pandas as pd
 import pickle
 import cs_Settings as p7dS
 
+
 def keepAllButFunc(excluded):
     def filterFunc(h):
         return h not in excluded
     return filterFunc
+
+
 def keepAllInFunc(kept):
     def filterFunc(h):
         return h in kept
     return filterFunc
+
 
 def refPath():
     full_path = os.path.realpath(__file__)
@@ -57,7 +61,7 @@ def loadDict(directory, filename, verbose):
 
 
 def dataTypesFilename(full):
-    directory=f"{refPath()}{p7dS.SHAREDRESOURCESTYPESDIR}"
+    directory = f"{refPath()}{p7dS.SHAREDRESOURCESTYPESDIR}"
     return filenameGeneric(directory=directory,
                            filename=p7dS.MAINDATATYPESFILENAME,
                            full=full)
@@ -65,16 +69,19 @@ def dataTypesFilename(full):
 
 def mainDataTypes(verbose):
     directory, filename = dataTypesFilename(full=False)
-    d= loadDict(directory=directory,
-                    filename=filename,
-                    verbose=verbose)
-    d[p7dS.H_SHARED_TARGET]="int32"
+    d = loadDict(directory=directory,
+                 filename=filename,
+                 verbose=verbose)
+    d[p7dS.H_SHARED_TARGET] = "int32"
     return d
 
+
+TYPEDICT = mainDataTypes(verbose=False)
+
+
 def adjustTypes(df, verbose):
-    typeDict = mainDataTypes(verbose=verbose)
     for h in df.columns:
-        dtype = typeDict.get(h)
+        dtype = TYPEDICT.get(h)
         if verbose:
             if dtype is None:
                 print(f"{h} doesn't exist in in {df.columns}.")
@@ -97,25 +104,9 @@ def dfFromJson(directory, filename, verbose):
     return adjustTypes(df=df, verbose=verbose)
 
 
-
 def main():
+    pass
 
-    print("Path at terminal when executing this file")
-    print(os.getcwd() + "\n")
-
-    print("This file path, relative to os.getcwd()")
-    print(__file__ + "\n")
-
-    print("This file full path (following symlinks)")
-    full_path = os.path.realpath(__file__)
-    print(full_path + "\n")
-
-    print("This file directory and name")
-    path, filename = os.path.split(full_path)
-    print(path + ' --> ' + filename + "\n")
-
-    print("This file directory only")
-    print(os.path.dirname(full_path))
 
 if __name__ == '__main__':
     main()
