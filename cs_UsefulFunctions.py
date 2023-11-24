@@ -2,12 +2,16 @@ import os
 import json
 import pandas as pd
 import pickle
-# import sklearn
-# import uvicorn
-# import lightgbm
-# import sklearn.model_selection
-# import sklearn.metrics
 import cs_Settings as p7dS
+
+def keepAllButFunc(excluded):
+    def filterFunc(h):
+        return h not in excluded
+    return filterFunc
+def keepAllInFunc(kept):
+    def filterFunc(h):
+        return h in kept
+    return filterFunc
 
 def refPath():
     full_path = os.path.realpath(__file__)

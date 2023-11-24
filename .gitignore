@@ -1,5 +1,4 @@
 Dockerfile
 runAPI.bat
-runRequirements.bat
 runStreamlit.bat
 __pycache__/
