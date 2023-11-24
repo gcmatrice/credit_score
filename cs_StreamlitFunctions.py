@@ -12,6 +12,8 @@ import cs_UsefulFunctions as p7uSF
 
 #Features to appear first in the list of features
 
+STREAMLITAPI="https://credit-score-gc.streamlit.app/"
+
 DEFAULT_STREAMLIT_FEATS = [
     "EXT_SOURCE_3",
     "EXT_SOURCE_2",

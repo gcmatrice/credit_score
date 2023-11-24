@@ -147,7 +147,7 @@ with tabPositioning:  # positioning
                                   override_=override_).resize((600, 300)))
 
 with tabFeaturesValues:  # features values
-    st.markdown(centeredText(text=f"To do",
+    st.markdown(centeredText(text=f"To do later",
                              color="red", whichH="1"),
                 unsafe_allow_html=True)
 
