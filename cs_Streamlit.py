@@ -2,34 +2,35 @@ import streamlit as st
 import cs_StreamlitFunctions as p7STF
 import cs_Settings as p7dS
 
-#Pictures
-logoImage =p7STF.logoImage.resize((925, 200))
+# Pictures
+logoImage = p7STF.logoImage.resize((925, 200))
 paidBackImages = p7STF.paidBackImages
 
-#Dataframes (for performance purposes)
+# Dataframes (for performance purposes)
 masterDf = p7STF.masterDf
 positioningDf = p7STF.positioningDf
 
-#Dictionary of descriptions of the features
+# Dictionary of descriptions of the features
 descriptionsDict = p7STF.descriptionsDict
 
-#Tabs
-tabScorer, tabPositioning, tabFeaturesValues = st.tabs(
-    ["Credit Scorer", 
-    "Feature Positioning",
-    "Features values"])
+# Tabs
+tabScorer, tabFeaturesValues, tabPositioning = st.tabs(
+    ["Credit Scorer",
+     "Features values",
+     "Feature Positioning"])
 
-#Centered text with adjustable font sizes and color
+# Centered text with adjustable font sizes and color
+
+
 def centeredText(text, color, whichH):
     return (f"<h{whichH} style='text-align: center; color: {color};'>"
             f"{text}</h{whichH}>")
 
 
-
 #Logo (sidebar)
 st.sidebar.image(logoImage)
 
-#API Address selection
+# API Address selection
 apiIpAddress = st.sidebar.text_input("API IP Address",
                                      value=p7dS.LOCALE_API)
 if "apiIpAddress" not in st.session_state:
@@ -39,11 +40,11 @@ if "apiIpAddress" not in st.session_state:
 #                              ["locale", "remote"])
 # apiIpAddress = p7dS.AZURE_API if ipAddress == "remote" else p7dS.LOCALE_API
 
-#Customer type (all, those who repaid or those who defaulted)
+# Customer type (all, those who repaid or those who defaulted)
 custTypeStr = st.sidebar.radio("Type of customer",
                                p7STF.orderedCustomerTypes())
 
-#Required persistency
+# Required persistency
 listLength = len(p7STF.idList(customerType=custTypeStr))
 updateIdList = False
 if "listLength" not in st.session_state:
@@ -60,14 +61,13 @@ elif custTypeStr != st.session_state["custTypeStr"]:
     st.session_state["custTypeStr"] = custTypeStr
 
 
-
 if updateIdList:
     idList = p7STF.idList(customerType=custTypeStr)
     st.session_state["idList"] = idList
 else:
     idList = st.session_state["idList"]
 
-#Customer Id (sidebar)
+# Customer Id (sidebar)
 title = f"Customer Id (among {len(idList)})"
 whichItem = st.sidebar.selectbox(title, idList)
 
@@ -77,7 +77,7 @@ with tabScorer:  # Score and repayment
     st.markdown(centeredText(text=title, color="black", whichH="2"),
                 unsafe_allow_html=True)
 
-    #Potention amount adjustment
+    # Potention amount adjustment
     currentAmount = p7STF.getAmount(id_=whichItem)
     amount = st.slider(label=f"Adjust {p7dS.H_SHARED_AMOUNT}",
                        min_value=0,
@@ -113,12 +113,19 @@ with tabScorer:  # Score and repayment
             st.image(img.resize((300, 150)))
     else:
         st.markdown("## No answer from API")
+
+with tabFeaturesValues:  # features values
+    fDf = p7STF.featuresTable(id_=whichItem)
+    # _ = st.data_editor(fDf, hide_index=True)
+    _ = st.dataframe(fDf, hide_index=True)
+    # _ = st.table(fDf, hide_index=True)
+
 with tabPositioning:  # positioning
     title = f"Feature Positioning, customer #{whichItem}"
     st.markdown(centeredText(text=title, color="black", whichH="2"),
                 unsafe_allow_html=True)
 
-    #Feature selection for the positioning
+    # Feature selection for the positioning
     possibleFeatures = p7STF.possibleFeatures
     priorities = p7STF.DEFAULT_STREAMLIT_FEATS
     availableFeatures = p7STF.mergeWithPriority(source=possibleFeatures,
@@ -127,7 +134,7 @@ with tabPositioning:  # positioning
     displayedFeature = st.selectbox(label="Feature",
                                     options=availableFeatures)
 
-    #Description of the selection feature
+    # Description of the selection feature
     description = descriptionsDict.get(displayedFeature)
     if description is None:
         description = "No description available"
@@ -146,8 +153,6 @@ with tabPositioning:  # positioning
                                   displayedFeature=displayedFeature,
                                   override_=override_).resize((600, 300)))
 
-with tabFeaturesValues:  # features values
-    st.markdown(centeredText(text=f"To do later",
-                             color="red", whichH="1"),
-                unsafe_allow_html=True)
-
+    # st.markdown(centeredText(text=f"To do later",
+    #                          color="red", whichH="1"),
+    #             unsafe_allow_html=True)

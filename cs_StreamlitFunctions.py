@@ -93,9 +93,9 @@ def streamlitDfFunc():
     return df
 
 masterDf = streamlitDfFunc()
-masterDf[POSing_RESULT] = masterDf[p7dS.H_SHARED_TARGET].astype(int)
-masterDf[POSing_RESULT].replace(1, FLAG_DEFAULTED, inplace=True)
-masterDf[POSing_RESULT].replace(0, FLAG_REPAID, inplace=True)
+# masterDf[POSing_RESULT] = masterDf[p7dS.H_SHARED_TARGET].astype(int)
+# masterDf[POSing_RESULT].replace(1, FLAG_DEFAULTED, inplace=True)
+# masterDf[POSing_RESULT].replace(0, FLAG_REPAID, inplace=True)
 
 def streamlitPositioningFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.STREAMLITDATADIR}"
@@ -230,6 +230,19 @@ def featureValue(id_, displayedFeature):
     if nbRows != 1:
         return None
     return df.at[0, displayedFeature]
+
+def featuresTable(id_):
+    df=oneLineDf(id_=id_).copy()
+    df.reset_index(inplace=True,drop=True)
+    df=df[[h 
+    for h in df.columns 
+    if h not in {p7dS.H_SHARED_TARGET,p7dS.H_SHARED_UID}]]
+    df=df.transpose()
+    df.reset_index(inplace=True)
+    df=df.rename(columns={"index":"Feature_Name",0:"Value_init"})
+    df["Value"]=df["Value_init"].apply(str)
+    del df["Value_init"]
+    return df    
 
 
 def trueOutcome(id_):
