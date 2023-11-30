@@ -16,7 +16,7 @@ descriptionsDict = p7STF.descriptionsDict
 # Tabs
 tabScorer, tabFeaturesValues, tabPositioning = st.tabs(
     ["Credit Scorer",
-     "Features values",
+     "Features Values",
      "Feature Positioning"])
 
 # Centered text with adjustable font sizes and color
