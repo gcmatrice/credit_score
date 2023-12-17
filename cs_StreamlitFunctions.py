@@ -6,13 +6,17 @@ import seaborn as sns
 from operator import itemgetter, getitem
 from PIL import Image
 import math
-import numpy as np
 import cs_Settings as p7dS
 import cs_UsefulFunctions as p7uSF
 
-#Features to appear first in the list of features
+# Constants used by the dashboard
 
+# API IP Addresses
+DEPLOYED_API_ADD_FILENAME = "deployedAPIAddress.txt"
+LOCALE_API_IPADDRESS = "http://127.0.0.1:8000/"
+ROOT_IPADDRESS = "http://"
 
+# Features to appear first in the list of features
 DEFAULT_STREAMLIT_FEATS = [
     "EXT_SOURCE_3",
     "EXT_SOURCE_2",
@@ -92,10 +96,8 @@ def streamlitDfFunc():
         del df["index"]
     return df
 
+
 masterDf = streamlitDfFunc()
-# masterDf[POSing_RESULT] = masterDf[p7dS.H_SHARED_TARGET].astype(int)
-# masterDf[POSing_RESULT].replace(1, FLAG_DEFAULTED, inplace=True)
-# masterDf[POSing_RESULT].replace(0, FLAG_REPAID, inplace=True)
 
 def streamlitPositioningFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.STREAMLITDATADIR}"
@@ -114,14 +116,11 @@ def positioningDfFunc():
                             filename=filename,
                             verbose=False)
 
+
 positioningDf = positioningDfFunc()
 positioningDf[POSing_RESULT] = positioningDf[p7dS.H_SHARED_TARGET].astype(int)
 positioningDf[POSing_RESULT].replace(1, FLAG_DEFAULTED, inplace=True)
 positioningDf[POSing_RESULT].replace(0, FLAG_REPAID, inplace=True)
-
-
-
-
 
 
 def needleFilename(full):
@@ -132,9 +131,9 @@ def needleFilename(full):
                                  full=full)
 
 
-def gaugeFilename(thresholdH, full):
+def gaugeFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.STREAMLITPICTURESDIR}"
-    filename = f"gauge_{thresholdH}.png"
+    filename = f"gauge.png"
     return p7uSF.filenameGeneric(directory=directory,
                                  filename=filename,
                                  full=full)
@@ -147,9 +146,7 @@ def generateGauge(score):
     _, needlefn = needleFilename(full=True)
     dial = Image.open(needlefn)
     dial = dial.rotate(rotation, resample=Image.BICUBIC, center=loc)
-    thresholdH = p7dS.FINALMODELTHRESHOLDPCT
-    _, filename = gaugeFilename(thresholdH=thresholdH,
-                                full=True)
+    _, filename = gaugeFilename(full=True)
     gauge = Image.open(filename)
     gauge.paste(dial, mask=dial)
     return gauge
@@ -222,6 +219,7 @@ def oneLineDf(id_):
     mask = masterDf[p7dS.H_SHARED_UID] == id_
     return masterDf[mask].reset_index(drop=True)
 
+
 def featureValue(id_, displayedFeature):
     df = oneLineDf(id_)
     df = df[[displayedFeature]].copy()
@@ -231,18 +229,19 @@ def featureValue(id_, displayedFeature):
         return None
     return df.at[0, displayedFeature]
 
+
 def featuresTable(id_):
-    df=oneLineDf(id_=id_).copy()
-    df.reset_index(inplace=True,drop=True)
-    df=df[[h 
-    for h in df.columns 
-    if h not in {p7dS.H_SHARED_TARGET,p7dS.H_SHARED_UID}]]
-    df=df.transpose()
+    df = oneLineDf(id_=id_).copy()
+    df.reset_index(inplace=True, drop=True)
+    df = df[[h
+             for h in df.columns
+             if h not in {p7dS.H_SHARED_TARGET, p7dS.H_SHARED_UID}]]
+    df = df.transpose()
     df.reset_index(inplace=True)
-    df=df.rename(columns={"index":"Feature_Name",0:"Value_init"})
-    df["Value"]=df["Value_init"].apply(str)
-    del df["Value_init"]
-    return df    
+    df = df.rename(columns={"index": "Feature Name", 0: "value_root"})
+    df["Value"] = df["value_root"].apply(str)
+    del df["value_root"]
+    return df
 
 
 def trueOutcome(id_):
@@ -275,8 +274,8 @@ def itemRequest(whichItem, apiurl, amount=None):
         return None, None, None
 
 
-def idList(customerType=WHICH_CUSTOMER_ALL):
-    if WHICH_CUSTOMER_ALL==customerType:
+def streamlitIdList(customerType=WHICH_CUSTOMER_ALL):
+    if WHICH_CUSTOMER_ALL == customerType:
         return masterDf[p7dS.H_SHARED_UID].tolist()
     target = 1 if WHICH_CUSTOMER_DEFAULT == customerType else 0
     df = masterDf[masterDf[p7dS.H_SHARED_TARGET] == target]
@@ -291,21 +290,16 @@ def getAmount(id_):
     return int(math.floor(getitem(s, 0)))
 
 
-
-
 def positioningImg(id_, displayedFeature, override_=None):
     thisIdHeader = "ThisId"
-    # print(f"{positioningDf.columns=}")
     df = positioningDf[[displayedFeature,
                         p7dS.H_SHARED_TARGET,
                         p7dS.H_SHARED_UID,
                         POSing_RESULT]].copy()
     nbrows, _ = df.shape
     df[thisIdHeader] = [id_]*nbrows
-    # oldf = oneLineDf(id_=id_)
     fig, ax = plt.subplots(figsize=(8, 4))
     sns.set_theme(style="ticks", palette="pastel")
-    # value = oldf.at[0, displayedFeature] if override_ is None else override_
     ax = sns.boxplot(data=df, x=thisIdHeader, y=displayedFeature,
                      hue=POSing_RESULT, orient='v', ax=ax)
     ax.set(xticklabels=[])
@@ -313,7 +307,7 @@ def positioningImg(id_, displayedFeature, override_=None):
     ax.tick_params(bottom=False)  # remove the ticks
     desc = descriptionsDict.get(displayedFeature)
     if desc is not None:
-        value=featureValue(id_=id_, displayedFeature=displayedFeature)
+        value = featureValue(id_=id_, displayedFeature=displayedFeature)
         ax.axhline(value, color="black")
         title = f"Value={value}"
         fig.suptitle(title, fontsize=20)
@@ -332,6 +326,23 @@ def mergeWithPriority(source, priorities, verbose):
     v = list(filter(p7uSF.keepAllInFunc(kept=source), priorities))
     v.extend(filter(p7uSF.keepAllButFunc(excluded=v), source))
     return v
+
+def apiAddressFilename(full):
+    directory = f"{p7uSF.refPath()}{p7dS.STREAMLITDATADIR}"
+    filename = DEPLOYED_API_ADD_FILENAME
+    return p7uSF.filenameGeneric(directory=directory,
+                                 filename=filename,
+                                 full=full)
+
+def deployedAPIAddress():
+    directory,filename = apiAddressFilename(full=False)
+    exists = p7uSF.fileAlreadyExists(directory=directory,
+                                     filename=filename,
+                                     verbose=False)
+    if not exists:
+        return False, ""
+    with open(f"{directory}{filename}", "r", encoding="utf8") as f:
+        return True, f.read().strip()
 
 
 def main():

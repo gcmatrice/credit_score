@@ -1,9 +1,9 @@
 from typing import Union
 from operator import getitem
 import fastapi
+import time
 import cs_APIFunctions as p7APIF
 import cs_Settings as p7dS
-import time
 
 description = """
 ## items
@@ -22,7 +22,7 @@ app = fastapi.FastAPI(title="Credit Score API",
                       summary=summary)
 
 
-model = p7APIF.finalModel()
+model = p7APIF.p7FinalModel(verbose=False)
 apiDf = p7APIF.apiDfFunc()
 
 

@@ -11,18 +11,17 @@ def loadModel(directory, filename, verbose):
 def finalModelFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.APIMODELDIR}"
     filename = (f"apiModel_{p7dS.STREAMLITNBCUSTOMERS}"
-                f"_{p7dS.APINBFEATURES}"
-                f"_{p7dS.FINALMODELTHRESHOLDPCT}.pkl")
+                f"_{p7dS.APINBFEATURES}.pkl")
     return p7uSF.filenameGeneric(directory=directory,
                                  filename=filename,
                                  full=full)
 
 
-def finalModel():
+def p7FinalModel(verbose):
     directory, filename = finalModelFilename(full=False)
     return loadModel(directory=directory,
                      filename=filename,
-                     verbose=False)
+                     verbose=verbose)
 
 def apiDataFilename(full):
     directory = f"{p7uSF.refPath()}{p7dS.APIDATADIR}"

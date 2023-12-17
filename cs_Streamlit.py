@@ -20,8 +20,6 @@ tabScorer, tabFeaturesValues, tabPositioning = st.tabs(
      "Feature Positioning"])
 
 # Centered text with adjustable font sizes and color
-
-
 def centeredText(text, color, whichH):
     return (f"<h{whichH} style='text-align: center; color: {color};'>"
             f"{text}</h{whichH}>")
@@ -31,21 +29,36 @@ def centeredText(text, color, whichH):
 st.sidebar.image(logoImage)
 
 # API Address selection
+ST_LOCALE="locale"
+ST_DEPLOYED="deployed"
+ST_MANUAL="manual entry"
+deployedAddressKnown, deployedAPIAddress = p7STF.deployedAPIAddress()
+if deployedAddressKnown:
+    deployedAddressOptions = [ST_LOCALE, ST_DEPLOYED, ST_MANUAL]
+else:
+    deployedAddressOptions = [ST_LOCALE, ST_MANUAL]
+ipAddressSelection = st.sidebar.radio(label="Select API",
+                                      options=deployedAddressOptions)
+apiIpAddressDefaultValue = p7STF.LOCALE_API_IPADDRESS
+if ST_LOCALE == ipAddressSelection:
+    apiIpAddressDefaultValue = p7STF.LOCALE_API_IPADDRESS
+if ST_DEPLOYED == ipAddressSelection:
+    apiIpAddressDefaultValue = deployedAPIAddress
+if ST_MANUAL == ipAddressSelection:
+    apiIpAddressDefaultValue = p7STF.ROOT_IPADDRESS
+
 apiIpAddress = st.sidebar.text_input("API IP Address",
-                                     value=p7dS.LOCALE_API)
-if "apiIpAddress" not in st.session_state:
-    st.session_state["apiIpAddress"] = apiIpAddress
+                                     value=apiIpAddressDefaultValue)
 
-# ipAddress = st.sidebar.radio("IP Address",
-#                              ["locale", "remote"])
-# apiIpAddress = p7dS.AZURE_API if ipAddress == "remote" else p7dS.LOCALE_API
+#Customer type
 
-# Customer type (all, those who repaid or those who defaulted)
 custTypeStr = st.sidebar.radio("Type of customer",
                                p7STF.orderedCustomerTypes())
 
-# Required persistency
-listLength = len(p7STF.idList(customerType=custTypeStr))
+# Persistency
+if "apiIpAddress" not in st.session_state:
+    st.session_state["apiIpAddress"] = apiIpAddress
+listLength = len(p7STF.streamlitIdList(customerType=custTypeStr))
 updateIdList = False
 if "listLength" not in st.session_state:
     updateIdList = True
@@ -60,17 +73,19 @@ elif custTypeStr != st.session_state["custTypeStr"]:
     updateIdList = True
     st.session_state["custTypeStr"] = custTypeStr
 
-
 if updateIdList:
-    idList = p7STF.idList(customerType=custTypeStr)
+    idList = p7STF.streamlitIdList(customerType=custTypeStr)
     st.session_state["idList"] = idList
 else:
     idList = st.session_state["idList"]
+
 
 # Customer Id (sidebar)
 title = f"Customer Id (among {len(idList)})"
 whichItem = st.sidebar.selectbox(title, idList)
 
+
+# Dashboard
 
 with tabScorer:  # Score and repayment
     title = f"Credit scorer, customer #{whichItem}"
@@ -84,10 +99,15 @@ with tabScorer:  # Score and repayment
                        max_value=currentAmount,
                        value=currentAmount)
 
-    score, granted, defaulted = p7STF.itemRequest(apiurl=apiIpAddress,
-                                                  whichItem=whichItem,
-                                                  amount=amount)
-    if score is not None and granted is not None and defaulted is not None:
+    goOn = p7STF.ROOT_IPADDRESS != apiIpAddress
+    if goOn:
+        score, granted, defaulted = p7STF.itemRequest(apiurl=apiIpAddress,
+                                                      whichItem=whichItem,
+                                                      amount=amount)
+        goOn &= (score is not None)
+        goOn &= (granted is not None)
+        goOn &= (defaulted is not None)
+    if goOn:
         colGranted, colDefault = st.columns(2)
         colGauge, colPaidbackImg = st.columns(2)
         with colGranted:
@@ -116,9 +136,7 @@ with tabScorer:  # Score and repayment
 
 with tabFeaturesValues:  # features values
     fDf = p7STF.featuresTable(id_=whichItem)
-    # _ = st.data_editor(fDf, hide_index=True)
     _ = st.dataframe(fDf, hide_index=True)
-    # _ = st.table(fDf, hide_index=True)
 
 with tabPositioning:  # positioning
     title = f"Feature Positioning, customer #{whichItem}"
@@ -134,7 +152,6 @@ with tabPositioning:  # positioning
     displayedFeature = st.selectbox(label="Feature",
                                     options=availableFeatures)
 
-    # Description of the selection feature
     description = descriptionsDict.get(displayedFeature)
     if description is None:
         description = "No description available"
@@ -144,15 +161,6 @@ with tabPositioning:  # positioning
     override_ = None
     if displayedFeature == p7dS.H_SHARED_AMOUNT:
         override_ = amount
-    # fValue = p7STF.featureValue(id_=whichItem,
-    #                             displayedFeature=displayedFeature)
-    # st.markdown(centeredText(text=f"Value={fValue}",
-    #                          color="black", whichH="5"),
-    #             unsafe_allow_html=True)
     st.image(p7STF.positioningImg(id_=whichItem,
                                   displayedFeature=displayedFeature,
                                   override_=override_).resize((600, 300)))
-
-    # st.markdown(centeredText(text=f"To do later",
-    #                          color="red", whichH="1"),
-    #             unsafe_allow_html=True)
