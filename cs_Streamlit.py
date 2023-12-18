@@ -29,7 +29,7 @@ def centeredText(text, color, whichH):
 st.sidebar.image(logoImage)
 
 # API Address selection
-ST_LOCALE="locale"
+ST_LOCALE="local"
 ST_DEPLOYED="deployed"
 ST_MANUAL="manual entry"
 deployedAddressKnown, deployedAPIAddress = p7STF.deployedAPIAddress()
